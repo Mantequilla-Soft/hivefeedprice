@@ -30,6 +30,7 @@ function parseInterval(input: string): number {
     "10min": 600000,
     "30min": 1800000,
     "1hour": 3600000,
+    "6hour": 21600000,
   };
   return intervals[input as keyof typeof intervals] || 180000;
 }

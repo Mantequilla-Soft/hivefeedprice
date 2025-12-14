@@ -143,7 +143,33 @@ install_all() {
 
   echo
   header "Installation complete"
-  info "Next: ./run.sh start"
+  
+  # Offer interactive setup if no .env exists
+  if [ ! -f .env ]; then
+    echo
+    info "No .env file found. Starting interactive setup..."
+    echo
+    if [ -f ./setup.sh ]; then
+      ./setup.sh
+    else
+      warn "setup.sh not found. Please create .env manually (see .env.example)"
+      info "Next: cp .env.example .env && edit .env"
+    fi
+  else
+    info "Configuration found (.env exists)"
+    info "Next: ./run.sh start"
+    info "To reconfigure: ./run.sh setup"
+  fi
+}
+
+run_setup() {
+  header "Configuration Setup"
+  if [ -f ./setup.sh ]; then
+    ./setup.sh "$@"
+  else
+    err "setup.sh not found"
+    exit 1
+  fi
 }
 
 # ---------------------------
@@ -299,14 +325,25 @@ clean_wallet() {
 
 usage() {
   header "${APP_NAME}"
-  echo "Usage: $0 {install|start|stop|restart|logs|status|clean|clean-wallet}"
-  echo "Tip: ./run.sh install && ./run.sh start"
-  echo ""
-  echo "clean-wallet: Remove Beekeeper wallet (use when changing HIVE_SIGNING_PRIVATE_KEY)"
+  echo "Usage: $0 {install|setup|start|stop|restart|logs|status|clean|clean-wallet}"
+  echo
+  echo "Commands:"
+  echo "  install      - Install Node.js, pnpm, and dependencies"
+  echo "  setup        - Interactive configuration wizard"
+  echo "  start        - Start the application"
+  echo "  stop         - Stop the application"
+  echo "  restart      - Restart the application"
+  echo "  logs         - View real-time logs"
+  echo "  status       - Show status"
+  echo "  clean        - Remove logs and PID files"
+  echo "  clean-wallet - Remove Beekeeper wallet (use when changing keys)"
+  echo
+  echo "Quick start: ./run.sh install && ./run.sh start"
 }
 
 case "${1:-status}" in
   install) install_all ;;
+  setup)   shift; run_setup "$@" ;;
   start)   start_app   ;;
   stop)    stop_app    ;;
   restart) stop_app; sleep 2; start_app ;;
