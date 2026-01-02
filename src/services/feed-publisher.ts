@@ -34,6 +34,8 @@ export class FeedPublisher {
   private hive: IHiveChainInterface | null = null;
   private wax: IWaxBaseInterface | null = null;
   private beekeeper: IBeekeeperInstance | null = null;
+  private session: IBeekeeperSession | null = null;
+  private wallet: IBeekeeperUnlockedWallet | null = null;
   private publicKey: string | null = null;
   private walletInitialized = false;
 
@@ -76,28 +78,33 @@ export class FeedPublisher {
 
   /**
    * Ensures the wallet is ready for signing.
-   * Creates a fresh session and opens/creates the wallet each time to avoid timeout issues.
+   * Reuses an existing session/wallet or creates new ones if needed.
    */
   private async ensureWalletReady(): Promise<IBeekeeperUnlockedWallet> {
     if (!this.beekeeper) {
       throw new Error("Beekeeper not initialized");
     }
 
-    // Create a fresh session each time to avoid timeout issues
-    const session = this.beekeeper.createSession(
-      `${BEEKEEPER.WALLET_NAME}-${Date.now()}`
-    );
+    // Reuse existing session and wallet if available
+    if (this.session && this.wallet) {
+      return this.wallet;
+    }
+
+    // Create a session only once (or if previous one was closed)
+    if (!this.session) {
+      this.session = this.beekeeper.createSession(BEEKEEPER.WALLET_NAME);
+    }
 
     try {
       // Try to open existing wallet
-      const lockedWallet: IBeekeeperWallet = await session.openWallet(
+      const lockedWallet: IBeekeeperWallet = await this.session.openWallet(
         BEEKEEPER.WALLET_NAME
       );
-      const unlockedWallet = await lockedWallet.unlock(
+      this.wallet = await lockedWallet.unlock(
         BEEKEEPER.WALLET_PASSWORD
       );
 
-      const publicKeys = await unlockedWallet.getPublicKeys();
+      const publicKeys = await this.wallet.getPublicKeys();
       if (!publicKeys || publicKeys.length === 0) {
         throw new Error("No public keys found in wallet");
       }
@@ -109,7 +116,7 @@ export class FeedPublisher {
         this.walletInitialized = true;
       }
       
-      return unlockedWallet;
+      return this.wallet;
     } catch (openErr) {
       // Wallet doesn't exist, create it
       if (!this.config.privateKey) {
@@ -118,17 +125,18 @@ export class FeedPublisher {
         );
       }
 
-      const { wallet } = await session.createWallet(
+      const { wallet } = await this.session.createWallet(
         BEEKEEPER.WALLET_NAME,
         BEEKEEPER.WALLET_PASSWORD,
         false
       );
+      this.wallet = wallet;
       this.publicKey = await wallet.importKey(this.config.privateKey);
       
       console.log("\x1b[32m[SUCCESS]\x1b[0m Wallet created with signing key");
       this.walletInitialized = true;
       
-      return wallet;
+      return this.wallet;
     }
   }
 
