@@ -65,8 +65,11 @@ export class FeedPublisher {
       await this.hiveChainFailover.initialize();
       this.hive = this.hiveChainFailover.getChain();
 
-      // Initialize beekeeper instance (keep for reuse)
-      this.beekeeper = await createBeekeeper();
+      // Initialize beekeeper instance (keep for reuse).
+      // unlockTimeout is set to a very large value so the wallet never
+      // auto-locks between broadcasts regardless of the configured interval.
+      // (Beekeeper's default is 900s / 15 min, far shorter than a 6-hour feed interval.)
+      this.beekeeper = await createBeekeeper({ unlockTimeout: 2147483647 });
 
       // Initialize wallet and get public key
       await this.ensureWalletReady();
@@ -97,6 +100,11 @@ export class FeedPublisher {
         // Wallet is no longer valid, need to recreate
         console.log("\x1b[33m[WARN]\x1b[0m Wallet session expired, recreating...");
         this.wallet = null;
+        // IMPORTANT: close the session before discarding it.
+        // Beekeeper enforces a hard limit of 64 concurrent sessions.
+        // Failing to close here leaks a session on every expiry,
+        // causing the app to fail after exactly 64 broadcasts.
+        try { this.session!.close(); } catch (_) {}
         this.session = null;
       }
     }
