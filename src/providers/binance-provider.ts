@@ -8,36 +8,11 @@ interface BinancePriceResponse {
 
 export class BinancePriceProvider extends PriceProvider {
   readonly exchangeName = "Binance";
-  readonly baseUrl = "https://data-api.binance.vision";
+  readonly baseUrl = "https://api.binance.com";
 
   async getHivePrice(): Promise<number> {
-    const results = await Promise.allSettled([
-      this.fetchWithRetry(() => this.fetchPrice("HIVEUSDT")),
-      this.fetchWithRetry(() => this.fetchPrice("HIVEUSDC")),
-    ]);
-
-    const successfulPrices: number[] = [];
-
-    results.forEach((result) => {
-      if (result.status === "fulfilled") {
-        successfulPrices.push(result.value);
-      }
-    });
-
-    if (successfulPrices.length === 0) {
-      throw new Error(
-        `Failed to fetch any HIVE prices from ${this.exchangeName}`
-      );
-    }
-
-    if (successfulPrices.length === 1) {
-      return roundToThreeDecimals(successfulPrices[0]);
-    }
-
-    const average =
-      successfulPrices.reduce((sum, price) => sum + price, 0) /
-      successfulPrices.length;
-    return roundToThreeDecimals(average);
+    const price = await this.fetchWithRetry(() => this.fetchPrice("HIVEUSDT"));
+    return roundToThreeDecimals(price);
   }
 
   private async fetchPrice(symbol: string): Promise<number> {

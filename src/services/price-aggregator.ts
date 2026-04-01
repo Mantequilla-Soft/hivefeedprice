@@ -15,7 +15,7 @@ import { mapProvidersToExchangePrices, mapProvidersToDetailedPrices } from "@/ut
 export class PriceAggregator {
   private readonly providers: PriceProvider[];
   private readonly providersConfig: Map<string, ProviderConfig>;
-  private readonly timeout = 5000;
+  private readonly timeout = 30000;
   private readonly maxRetries = 3;
 
   constructor(providers?: PriceProvider[], config?: ProviderConfig[]) {

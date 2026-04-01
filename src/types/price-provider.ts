@@ -24,10 +24,10 @@ export interface ExchangePrice {
 export abstract class PriceProvider {
   abstract readonly exchangeName: string;
   abstract readonly baseUrl: string;
-  protected maxRetries = 3;
-  protected retryAttempts = 3;
+  protected maxRetries = 2;
+  protected retryAttempts = 2;
   protected retryDelay = 1000;
-  protected requestTimeout = 10000;
+  protected requestTimeout = 15000;
 
   public configure(options: {
     readonly requestTimeout?: number;

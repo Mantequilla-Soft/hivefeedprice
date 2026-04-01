@@ -28,14 +28,14 @@ export const STATIC_PROVIDERS: readonly StaticProviderConfig[] = [
     name: "bitget",
     module: "@/providers/bitget-provider",
     exportName: "BitgetPriceProvider",
-    enabled: true,
+    enabled: false,
     weight: 1.0,
   },
   {
     name: "huobi",
     module: "@/providers/huobi-provider",
     exportName: "HuobiPriceProvider",
-    enabled: true,
+    enabled: false,
     weight: 1.0,
   },
   {
@@ -49,7 +49,7 @@ export const STATIC_PROVIDERS: readonly StaticProviderConfig[] = [
     name: "probit",
     module: "@/providers/probit-provider",
     exportName: "ProbitPriceProvider",
-    enabled: true,
+    enabled: false,
     weight: 1.0,
   },
 ] as const;
